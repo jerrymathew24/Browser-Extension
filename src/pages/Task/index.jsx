@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useBrowser } from "../../browser-context";
+import { quotes } from "../../assets/quotes";
+import { Todo } from "../../components/Todo";
+
+const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
 export const Task = () => {
   const { name, time, message, task, browserDispatch } = useBrowser();
   const lastTimeRef = useRef("");
 
   const [isChecked, setIsChecked] = useState(false);
+  const [isTodoOpen, setIsTodoOpen] = useState(false);
 
   useEffect(() => {
     const getTime = setInterval(() => {
@@ -35,6 +40,12 @@ export const Task = () => {
       type: "SET_TASK",
       payload: storedTask,
     });
+    if (new Date().getDate() !== Number(localStorage.getItem("date"))) {
+      localStorage.removeItem("task");
+      localStorage.removeItem("checkedTask");
+      localStorage.removeItem("date");
+      browserDispatch({ type: "REMOVE_TASK" });
+    }
   }, []);
 
   useEffect(() => {
@@ -49,6 +60,7 @@ export const Task = () => {
         payload: e.target.value,
       });
       localStorage.setItem("task", e.target.value);
+      localStorage.setItem("date", new Date().getDate());
     }
   };
 
@@ -66,16 +78,22 @@ export const Task = () => {
   };
 
   const handleCloseClick = () => {
-    browserDispatch({
-      type: "REMOVE_TASK"
-    })
-    localStorage.removeItem("task")
-    localStorage.removeItem("checkedTask");
-    setIsChecked(false);
-  }
+    if (isChecked) {
+      browserDispatch({
+        type: "REMOVE_TASK",
+      });
+      setIsChecked(false);
+      localStorage.removeItem("task");
+      localStorage.removeItem("checkedTask");
+    }
+  };
+
+  const handleTodoClick = () => {
+    setIsTodoOpen((isTodoOpen) => !isTodoOpen);
+  };
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center text-white">
+    <div className="h-full w-full flex flex-col items-center justify-center text-white relative">
       <span className="text-8xl text-gray-100">{time}</span>
       <h1 className="text-4xl m-5 text-gray-100">
         {message}, {name}!
@@ -113,6 +131,21 @@ export const Task = () => {
           </button>
         </div>
       )}
+      <div className="">
+        <div className="mt-10 text-center text-gray-400 italic text-lg">
+          "{randomQuote.text}" —{" "}
+          <span className="font-semibold">{randomQuote.author}</span>
+        </div>
+        {isTodoOpen && <Todo />}
+        <div className="absolute right-8 bottom-14">
+          <button
+            className="text-2xl border-2 p-2 rounded-2xl text-gray-100"
+            onClick={handleTodoClick}
+          >
+            ToDo
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
